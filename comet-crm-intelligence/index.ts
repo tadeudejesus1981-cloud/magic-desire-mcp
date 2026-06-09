@@ -12,10 +12,12 @@ const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.warn("Aviso: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY não configurados.");
+  console.warn("Aviso: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY não configurados. As ferramentas MCP falharão até que sejam definidas.");
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) 
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  : null;
 
 // ==========================================
 // Inicialização do Servidor MCP
@@ -38,6 +40,9 @@ server.tool(
     target_product_id: z.string().describe('ID do Produto Âncora (ex: fusilli-s-bolognese)')
   },
   async ({ start_time, end_time, target_product_id }) => {
+    if (!supabase) {
+      return { content: [{ type: 'text', text: 'Erro: Supabase não está configurado no servidor MCP.' }], isError: true };
+    }
     try {
       // 1. Cálculo da Fricção de Checkout (Funnel)
       // Como a SDK do Supabase não suporta agregação JSONB nativa avançada diretamente na API REST padrão,

@@ -14,7 +14,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SHIPDAY_API_KEY = process.env.SHIPDAY_API_KEY || '';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.warn("Aviso: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY não configurados.");
+  console.warn("Aviso: SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY não configurados. As ferramentas MCP falharão até que sejam definidas.");
 }
 if (!SHIPDAY_API_KEY) {
   console.warn("Aviso: SHIPDAY_API_KEY não configurada.");
@@ -23,7 +23,9 @@ if (!SHIPDAY_API_KEY) {
 // ==========================================
 // Clientes Externos (Supabase e ShipDay)
 // ==========================================
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) 
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) 
+  : null;
 
 const shipdayApi = axios.create({
   baseURL: 'https://api.shipday.com',
@@ -51,6 +53,9 @@ server.tool(
   'Lê o estado atual do painel do Supabase, identificando pedidos em preparação e aguardando entrega.',
   {},
   async () => {
+    if (!supabase) {
+      return { content: [{ type: 'text', text: 'Erro: Supabase não está configurado no servidor MCP.' }], isError: true };
+    }
     try {
       const { data, error } = await supabase
         .from('orders')
@@ -123,6 +128,9 @@ server.tool(
     etaMinutes: z.number().describe('Novo tempo estimado de entrega em minutos adicionais ou absolutos')
   },
   async ({ orderId, etaMinutes }) => {
+    if (!supabase) {
+      return { content: [{ type: 'text', text: 'Erro: Supabase não está configurado no servidor MCP.' }], isError: true };
+    }
     try {
       // Cria uma data futura baseada nos minutos adicionais informados
       const newEtaDate = new Date(Date.now() + etaMinutes * 60000).toISOString();
