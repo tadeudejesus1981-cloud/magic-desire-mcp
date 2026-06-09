@@ -137,7 +137,7 @@ app.get('/sse', async (req, res) => {
     }
 });
 // Rota POST para receber requisições JSON-RPC 2.0
-app.post('/message', express.json(), async (req, res) => {
+app.post('/message', async (req, res) => {
     if (!transport) {
         return res.status(500).send('Transporte não inicializado.');
     }
